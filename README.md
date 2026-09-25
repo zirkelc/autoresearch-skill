@@ -56,29 +56,39 @@ The third measurement is reported together with a control run of identical code.
 ## Contents
 
 ```
-SKILL.md                     the method, independent of the language
-references/methodology.md    how the measurements work and how to report them
-references/pr-packaging.md   how to turn the kept commits into pull requests
-templates/                   plan, experiment log, pull request body, scripts
-runtimes/node-ts/            the harness for JavaScript and TypeScript on Node.js
+autoresearch-skill/
+├── SKILL.md                      the method, independent of the language
+├── references/
+│   ├── methodology.md            how the measurements work and how to report them
+│   └── pr-packaging.md           how to turn the kept commits into pull requests
+├── templates/
+│   ├── plan.md                   campaign plan with calibration and experiment notes
+│   ├── experiments.tsv           experiment log
+│   ├── pr-body.md                pull request body
+│   ├── gates.example.sh          runs the repository's checks in the right order
+│   └── fetch-fixtures.sh         downloads external test inputs with checksums
+└── runtimes/
+    ├── README.md                 what a runtime must provide
+    └── node-ts/                  harness for JavaScript and TypeScript on Node.js
+        ├── harness.mts           shared code: config, git revisions, case loading
+        ├── ab.mts                compares two git revisions in one process
+        ├── solo.mts              measures one revision per process
+        ├── guard.mts             records and checks the behaviour of the cases
+        ├── differential.mts      compares the output of two revisions over generated inputs
+        ├── scan.mts              measures each case at three input sizes
+        ├── profile.mts           CPU profile per function, caller, line or directory
+        ├── mem.mts               retained memory per instance
+        ├── jitter.mts            checks that the machine is quiet enough to measure
+        ├── quiet.sh              waits for a quiet machine, then runs a command
+        ├── micro.example.mjs     compares two versions of one function
+        ├── selftest.mts          tests the harness on a generated monorepo
+        ├── cases.example.mts     example benchmark cases
+        ├── fixtures.example.mts  example shared inputs
+        ├── perf.config.example.json
+        └── README.md
 ```
 
-The node-ts runtime is copied into the target repository:
-
-| File | Purpose |
-|---|---|
-| `ab.mts` | Compares two git revisions in one process |
-| `solo.mts` | Measures one revision per process, for the numbers in a pull request |
-| `guard.mts` | Records and checks the behaviour of the benchmark cases |
-| `differential.mts` | Compares the output of two revisions over generated inputs |
-| `scan.mts` | Measures each case at three input sizes to find superlinear code |
-| `profile.mts` | CPU profile per function, caller, line or directory |
-| `mem.mts` | Retained memory per instance |
-| `jitter.mts`, `quiet.sh` | Check that the machine is quiet enough to measure |
-| `micro.example.mjs` | Template to compare two versions of one function before an experiment |
-| `selftest.mts` | Tests the harness on a generated monorepo |
-
-Other languages need a new runtime folder. `runtimes/README.md` lists what a runtime must provide.
+The `node-ts` folder is copied into the target repository. Other languages need a new runtime folder that follows `runtimes/README.md`.
 
 ## Install
 
@@ -99,16 +109,53 @@ A campaign takes several hours. Most of the time is measurement and, on a shared
 
 ## Results
 
-The skill has run on four repositories:
+The skill has run on four repositories. After each campaign, the skill was updated with the problems found during that campaign.
 
-| Project | Experiments | Kept | Result | Pull requests |
-|---|---|---|---|---|
-| [zod](https://github.com/colinhacks/zod) | 18 | 11 | 40% less time on the benchmark suite | [#6316](https://github.com/colinhacks/zod/pull/6316), [#6317](https://github.com/colinhacks/zod/pull/6317), [#6318](https://github.com/colinhacks/zod/pull/6318), [#6319](https://github.com/colinhacks/zod/pull/6319) (2 merged, 2 closed) |
-| [linkedom](https://github.com/WebReflection/linkedom) | 18 | 8 | 2.02x faster on the benchmark suite | [#335](https://github.com/WebReflection/linkedom/pull/335), [#336](https://github.com/WebReflection/linkedom/pull/336), [#337](https://github.com/WebReflection/linkedom/pull/337), [#338](https://github.com/WebReflection/linkedom/pull/338) (open) |
-| [micromark](https://github.com/micromark/micromark) | 16 | 7 | | [#234](https://github.com/micromark/micromark/pull/234), [#235](https://github.com/micromark/micromark/pull/235), [#236](https://github.com/micromark/micromark/pull/236), [#237](https://github.com/micromark/micromark/pull/237), [#238](https://github.com/micromark/micromark/pull/238), [#239](https://github.com/micromark/micromark/pull/239) (open) |
-| [undici](https://github.com/nodejs/undici) | 12 | 6 | | [#5901](https://github.com/nodejs/undici/pull/5901), [#5902](https://github.com/nodejs/undici/pull/5902), [#5903](https://github.com/nodejs/undici/pull/5903), [#5904](https://github.com/nodejs/undici/pull/5904) (open) |
+### zod
 
-After each campaign, the skill was updated with the problems found during that campaign.
+18 experiments, 11 kept. 40% less time on the benchmark suite.
+
+| Pull request | Description | Status |
+|---|---|---|
+| [#6316](https://github.com/colinhacks/zod/pull/6316) | Lazy `ZodError` construction, about 40% faster failing `safeParse` | Merged |
+| [#6317](https://github.com/colinhacks/zod/pull/6317) | Reuse frozen default parse contexts, about 15% faster leaf parses | Closed |
+| [#6318](https://github.com/colinhacks/zod/pull/6318) | Halve schema construction cost and keep instances in fast-properties mode | Merged |
+| [#6319](https://github.com/colinhacks/zod/pull/6319) | Single-check fast path and in-place issue prefixing in the object JIT | Closed |
+
+### linkedom
+
+18 experiments, 8 kept. 2.02x faster on the benchmark suite.
+
+| Pull request | Description | Status |
+|---|---|---|
+| [#335](https://github.com/WebReflection/linkedom/pull/335) | Create the event listeners map on first use | Open |
+| [#336](https://github.com/WebReflection/linkedom/pull/336) | Cache the class token value and skip the token list while parsing | Open |
+| [#337](https://github.com/WebReflection/linkedom/pull/337) | Walk and serialize the tree without intermediate arrays | Open |
+| [#338](https://github.com/WebReflection/linkedom/pull/338) | Allocate the node end marker without symbol keys in the literal | Open |
+
+### micromark
+
+16 experiments, 7 kept.
+
+| Pull request | Description | Status |
+|---|---|---|
+| [#234](https://github.com/micromark/micromark/pull/234) | Improve `subtokenize` performance | Open |
+| [#235](https://github.com/micromark/micromark/pull/235) | Improve `splice` performance | Open |
+| [#236](https://github.com/micromark/micromark/pull/236) | Improve HTML compile performance | Open |
+| [#237](https://github.com/micromark/micromark/pull/237) | Improve performance of parsing without extensions | Open |
+| [#238](https://github.com/micromark/micromark/pull/238) | Improve performance of the text and code text resolvers | Open |
+| [#239](https://github.com/micromark/micromark/pull/239) | Improve attention resolver performance | Open |
+
+### undici
+
+12 experiments, 6 kept.
+
+| Pull request | Description | Status |
+|---|---|---|
+| [#5901](https://github.com/nodejs/undici/pull/5901) | Avoid redundant request state in the `Request` constructor | Closed |
+| [#5902](https://github.com/nodejs/undici/pull/5902) | Mask WebSocket frames without a mask array, four bytes per step | Closed |
+| [#5903](https://github.com/nodejs/undici/pull/5903) | Check `ByteString` code units with a native scan | Open |
+| [#5904](https://github.com/nodejs/undici/pull/5904) | Split each cookie pair once in `getCookies` | Open |
 
 ## History
 
