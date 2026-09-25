@@ -6,11 +6,29 @@ Turn the linear branch of kept commits into a few independent PRs that reviewers
 
 Read the kept commits again before you group them. A campaign optimises for one small change at a time, so the series arrives with duplicated helpers, an unrolled loop in one of two places that need it, and forms that were convenient while experimenting.
 
-The rule that makes this safe is short: **any edit after the last measurement invalidates that measurement.** A review suggestion that touches a hot path is an experiment, and it gets the same treatment: the isolation check first, then the branch verification in section 3, and the numbers in the body come from the branch, never from the campaign log. In one campaign the review found no bugs and still changed the results three ways. One cleanup was neutral. One moved a shared helper so that a second code path got the unrolled loop as well, which doubled that PR's effect and made the campaign log an understatement. One was slower and would have shipped as an improvement, and the isolation check is what caught it.
+The rule that makes this safe is short: **any edit after the last measurement invalidates that measurement.** A review suggestion that touches a hot path is an experiment, and it gets the same treatment: the isolation check first, then the branch verification in section 4, and the numbers in the body come from the branch, never from the campaign log. In one campaign the review found no bugs and still changed the results three ways. One cleanup was neutral. One moved a shared helper so that a second code path got the unrolled loop as well, which doubled that PR's effect and made the campaign log an understatement. One was slower and would have shipped as an improvement, and the isolation check is what caught it.
 
 So: review, then re-measure, then group. Never review after the verification table is written.
 
-## 1. Group the commits
+## 1. Check each change against earlier work and the maintainers' principles
+
+Do this before you group, because it can remove or reshape a change.
+
+For every kept change, search open **and** closed PRs:
+
+```sh
+gh pr list --repo <owner/repo> --state all --search "<function name>" --limit 20
+gh pr list --repo <owner/repo> --state all --search "<file or module name>" --limit 20
+gh pr list --repo <owner/repo> --state all --search "perf in:title <area>" --limit 20
+```
+
+Read every result that touches the same code, and for the closed ones read why they were closed. An earlier closed attempt at the same idea predicts your PR's result better than any measurement. In one campaign, a PR repeated a PR that the code owner had closed 13 days earlier with "we already have a better version". The new PR used the same helper name and the same unrolled loop, and it was closed as a duplicate within hours. A search of open PRs only had not found the earlier one.
+
+Then check each change against the principles recorded in the plan during step 1 of `SKILL.md` (the maintainers' stated rules from their reviews of earlier performance PRs, and the code owner's own earlier attempts). Drop a change that breaks one of them, or reshape it so it does not. Do not argue for it in the PR body: a guard and a test suite prove that the behaviour is unchanged, and they cannot show that a change respects a design rule. In the same campaign, a second PR was closed because it merged steps that the code keeps separate on purpose to follow a specification, although its behaviour was identical.
+
+If a change survives only in a form the owner has already rejected, leave it out and mention it in the summary to the user instead.
+
+## 2. Group the commits
 
 Group kept commits by theme (the path or mechanism they touch), not by the order in which they were made. Good groups are the ones a maintainer can accept or reject as a unit, for example "error construction", "schema construction", "parse fast paths". Four PRs from eleven commits worked well. A group with a single strong commit is fine.
 
@@ -20,7 +38,7 @@ Before you present the grouping, check it mechanically: the union of the groups 
 
 Present the grouping to the user before you create branches.
 
-## 2. Build one branch per group
+## 3. Build one branch per group
 
 Check that the base branch did not move (`git fetch`). For each group:
 
@@ -57,7 +75,7 @@ git checkout <campaign-branch> -- perf && git reset -- perf
 
 Remove those copies again before switching back to the campaign branch, which tracks the same paths. The A/B harness itself does not need this: it materialises both revisions with `git archive`, so it can compare any two revisions from the campaign checkout. Only what runs against the working tree (the guard, and any run while the PR branch is checked out) needs the copy.
 
-## 3. Verify each branch alone
+## 4. Verify each branch alone
 
 Run from the harness location (the campaign branch):
 
@@ -77,7 +95,7 @@ An asymptotic keep or a trade-off must be re-measured in isolation before its bo
 
 Optionally, run the repo's own benchmark on the base and on each branch as an external cross-check. Quote a figure only under the rules in `methodology.md` (elephants, or paired in-process references, with caveats stated).
 
-## 4. Write the PR bodies
+## 5. Write the PR bodies
 
 Use `templates/pr-body.md`. Every PR gets the same preamble (the campaign and its method), then its own content:
 
@@ -93,7 +111,7 @@ Also follow the repo's own PR conventions (templates, agent instruction files su
 
 Write bodies to files and pass them with `--body-file`. Inline heredocs break backticks and template literals. When several PRs cross-reference each other, generate all the bodies from one script with placeholders (PR numbers, companion links, the harness link at a full hash), create the PRs, then fill the placeholders with `gh pr edit`. Four bodies written by hand drift apart; four generated from one script do not.
 
-## 5. Confirm and create, one PR at a time
+## 6. Confirm and create, one PR at a time
 
 Before any of this touches a remote, grep the plan, the log and the cases for private names, paths and hosts. PR bodies link the campaign branch publicly, and a plan written during the campaign names the downstream repo that motivated the work. One campaign published a private repository's name eight times that way. This is a blocking check, not a tidy-up.
 

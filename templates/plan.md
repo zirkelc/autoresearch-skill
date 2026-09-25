@@ -7,6 +7,20 @@ benchmarks: framework, what they measure, metric, lower or higher is better, run
 Whether tests pin observable behaviour. Which metric the maintainers accept, with evidence
 (merged perf PRs).>
 
+## Maintainers
+
+Principles stated in reviews of recent performance PRs, merged and rejected:
+
+| PR | State | Principle, in the maintainer's words |
+|---|---|---|
+| <#n> | <merged / closed / changes requested> | <quote> |
+
+Code owners and their earlier attempts in the areas you expect to change:
+
+| Area | Owner | Their earlier PRs there, and why the closed ones were closed |
+|---|---|---|
+| <file or module> | <name> | <#n: reason> |
+
 ## Harness
 
 <Runtime folder used and adaptations. Cases and what they mirror. How to run the A/B and
