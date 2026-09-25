@@ -157,10 +157,6 @@ The skill has run on four repositories. After each campaign, the skill was updat
 | [#5903](https://github.com/nodejs/undici/pull/5903) | Check `ByteString` code units with a native scan | Open |
 | [#5904](https://github.com/nodejs/undici/pull/5904) | Split each cookie pair once in `getCookies` | Open |
 
-## History
-
-The skill was first part of [zirkelc/skills](https://github.com/zirkelc/skills). It moved to this repository with its commit history. Commit hashes mentioned in older commit messages refer to the original repository.
-
 ## License
 
 MIT
