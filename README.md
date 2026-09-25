@@ -1,6 +1,6 @@
 <div align='center'>
   <h1>Autoresearch</h1>
-  <p align="center">A Claude skill that runs a performance optimization campaign on a code repository.</p>
+  <p align="center">An agent skill that runs a performance optimization campaign on a code repository.</p>
 </div>
 
 ## What it does
@@ -82,12 +82,14 @@ Other languages need a new runtime folder. `runtimes/README.md` lists what a run
 
 ## Install
 
+Clone the repository and link it into the skills directory of your agent:
+
 ```bash
-git clone https://github.com/zirkelc/autoresearch-skill.git ~/Developer/autoresearch-skill
-ln -s ~/Developer/autoresearch-skill ~/.claude/skills/autoresearch
+git clone https://github.com/zirkelc/autoresearch-skill.git
+ln -s "$PWD/autoresearch-skill" <skills-directory>/autoresearch
 ```
 
-The directory in `~/.claude/skills` must be named `autoresearch`.
+The linked directory must be named `autoresearch`, which is the name in `SKILL.md`.
 
 ## Use
 

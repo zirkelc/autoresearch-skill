@@ -89,7 +89,7 @@ Use `templates/pr-body.md`. Every PR gets the same preamble (the campaign and it
 - **Instrument artefacts**: if a case shows a delta that standalone timing does not reproduce (see `methodology.md`), say so in the body. A reviewer who runs the harness will see the same line.
 - **Companion PRs**: links to the other PRs of the campaign. Add these only after all PRs exist, with their real numbers. Placeholder numbers such as `#1 #2` link to, and notify, the old issues 1 and 2 of the target repo.
 
-Also follow the repo's own PR conventions (templates, AGENTS.md or CLAUDE.md rules, tone). Where the repo has a template, the campaign preamble goes first and the repo's own sections follow it, so a maintainer finds the structure they expect. **Never tick a DCO or CLA checkbox.** It is a declaration by a person about their own work, and an agent cannot make it; leave it unticked and say so when you present the PR.
+Also follow the repo's own PR conventions (templates, agent instruction files such as AGENTS.md, tone). Where the repo has a template, the campaign preamble goes first and the repo's own sections follow it, so a maintainer finds the structure they expect. **Never tick a DCO or CLA checkbox.** It is a declaration by a person about their own work, and an agent cannot make it; leave it unticked and say so when you present the PR.
 
 Write bodies to files and pass them with `--body-file`. Inline heredocs break backticks and template literals. When several PRs cross-reference each other, generate all the bodies from one script with placeholders (PR numbers, companion links, the harness link at a full hash), create the PRs, then fill the placeholders with `gh pr edit`. Four bodies written by hand drift apart; four generated from one script do not.
 

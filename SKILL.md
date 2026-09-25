@@ -28,7 +28,7 @@ Ask the user, in one question round:
 
 ## Step 1: Explore what already exists
 
-Find out how the repo is built, tested and measured before you change anything. Look at the package manifest and its scripts, the test runner configuration, CI workflows, and any `bench*`, `perf*` or `profil*` directories. Also read CONTRIBUTING, agent instruction files (AGENTS.md, CLAUDE.md) and the recent history of perf-related commits and branches, including unmerged remote branches: maintainers often leave half-finished perf work that is prior art for your changes.
+Find out how the repo is built, tested and measured before you change anything. Look at the package manifest and its scripts, the test runner configuration, CI workflows, and any `bench*`, `perf*` or `profil*` directories. Also read CONTRIBUTING, agent instruction files (such as AGENTS.md) and the recent history of perf-related commits and branches, including unmerged remote branches: maintainers often leave half-finished perf work that is prior art for your changes.
 
 Report to the user:
 
