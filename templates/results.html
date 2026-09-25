@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Performance results</title>
+<!--
+  Results page for a performance campaign. One self-contained file: no build step, no network.
+  Edit CONFIG and ROWS at the bottom. Every view renders from them, so the views cannot disagree.
+  Rules for the numbers: references/visualization.md.
+-->
+<style>
+  :root {
+    --surface: #fcfcfb;
+    --surface-2: #f2f4f7;
+    --ink: #111418;
+    --ink-2: #4d535c;
+    --ink-3: #6b717b;
+    --rule: #dde1e7;
+    --base: #8a8f98;
+    --accent: #2a78d6;
+    --worse: #c4561d;
+    --warn-bg: #fff4e5;
+    --warn-ink: #7a3e00;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface: #16181b; --surface-2: #1f2226; --ink: #f3f4f6; --ink-2: #c3c7ce; --ink-3: #9aa0a8;
+      --rule: #30343a; --base: #a3a8b0; --accent: #3987e5; --worse: #e0773f; --warn-bg: #3a2a14; --warn-ink: #f5c98a;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface: #16181b; --surface-2: #1f2226; --ink: #f3f4f6; --ink-2: #c3c7ce; --ink-3: #9aa0a8;
+    --rule: #30343a; --base: #a3a8b0; --accent: #3987e5; --worse: #e0773f; --warn-bg: #3a2a14; --warn-ink: #f5c98a;
+  }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--surface); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .page { max-width: 920px; margin: 0 auto; padding: 40px 16px 56px; display: grid; gap: 36px; }
+  header { display: grid; gap: 12px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+  h1 { margin: 0; font-size: clamp(24px, 4.2vw, 36px); line-height: 1.15; font-weight: 600; max-width: 32ch; text-wrap: balance; }
+  h2 { margin: 0; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+  .lede { margin: 0; max-width: 66ch; color: var(--ink-2); font-size: 16px; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+
+  .check { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+  .check ul { margin: 6px 0 0; padding-left: 18px; }
+
+  figure { margin: 0; display: grid; gap: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; color: var(--ink-2); }
+  .key { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 22px; height: 10px; border-radius: 2px; display: inline-block; }
+  .rows { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; }
+  .row { display: grid; grid-template-columns: minmax(160px, 250px) 1fr; gap: 6px 18px; align-items: center; padding: 6px 8px; margin-inline: -8px; border-radius: 8px; position: relative; }
+  .row:hover, .row:focus-visible { background: var(--surface-2); }
+  .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .name { display: grid; gap: 1px; }
+  .name b { font-weight: 600; }
+  .name span { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  .bars { display: grid; gap: 2px; }
+  .bar-line { display: grid; grid-template-columns: 1fr 4ch; align-items: center; gap: 10px; }
+  .track { position: relative; height: 14px; }
+  .bar { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
+  .ref { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3); opacity: 0.5; }
+  .val { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--ink-3); text-align: right; }
+  .result { grid-column: 2; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .result .quiet { color: var(--ink-3); }
+  .scale { display: grid; grid-template-columns: minmax(160px, 250px) 1fr; gap: 18px; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+  .ticks { display: flex; justify-content: space-between; padding-right: calc(4ch + 10px); border-top: 1px solid var(--rule); padding-top: 6px; }
+  figcaption { font-size: 12.5px; color: var(--ink-3); max-width: 80ch; }
+  .tip { position: absolute; z-index: 2; left: 0; top: 100%; margin-top: 6px; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); padding: 10px 12px; font-size: 13px; width: min(320px, 100%); display: none; }
+  .row:hover .tip, .row:focus-visible .tip { display: grid; gap: 2px; }
+  .tip .mono { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+
+  .tiles { display: grid; gap: 12px; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+  @media (max-width: 620px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 400px) { .tiles { grid-template-columns: 1fr; } }
+  .tile { border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 4px; align-content: start; }
+  .tile .big { font-size: 38px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile .what { font-weight: 600; font-size: 14px; }
+  .tile .how { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  .tile.flat .big { font-size: 24px; }
+
+  section { display: grid; gap: 12px; }
+  details { border-top: 1px solid var(--rule); padding-top: 14px; }
+  summary { cursor: pointer; font-weight: 500; }
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; color: var(--ink-2); font-size: 12.5px; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .prs { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+  .status { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-left: 6px; }
+  footer { font-size: 13px; color: var(--ink-3); max-width: 75ch; }
+
+  @media (max-width: 620px) {
+    .row, .scale { grid-template-columns: 1fr; }
+    .result { grid-column: 1; }
+    .scale > span:first-child { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="check" id="check" role="alert" hidden>
+    <strong>Data check failed.</strong> Fix these rows before the page is shared:
+    <ul id="check-list"></ul>
+  </div>
+
+  <figure aria-labelledby="caption">
+    <div class="legend" id="legend"></div>
+    <ul class="rows" id="rows"></ul>
+    <div class="scale" aria-hidden="true"><span></span><div class="ticks" id="ticks"></div></div>
+    <figcaption id="caption"></figcaption>
+  </figure>
+
+  <section aria-labelledby="tiles-h">
+    <h2 id="tiles-h">Headline figures</h2>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <details>
+    <summary>Table view with pair ranges and controls</summary>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Workload</th><th scope="col">Change in time (median)</th><th scope="col">Speed-up</th><th scope="col">Range of the pairs</th><th scope="col">Identical-code control: median (range)</th><th scope="col">Pull request</th></tr>
+        </thead>
+        <tbody id="table"></tbody>
+      </table>
+    </div>
+  </details>
+
+  <section aria-labelledby="prs-h">
+    <h2 id="prs-h">Pull requests</h2>
+    <ul class="prs" id="prs"></ul>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+  /**
+   * Everything on the page comes from here.
+   *
+   * framing: "throughput" (work done in the same time, baseline = 100) or "time" (time for the
+   * same work, baseline = 100). Use the one the project's ecosystem reads.
+   */
+  const CONFIG = {
+    project: "owner/repo",
+    base: "main",
+    baseCommit: "0000000",
+    framing: "throughput",
+    title: "Write the headline here. Name the workloads, not the whole library.",
+    lede: "One sentence on what the project is and what each row measures.",
+    method: "Each number is the median of 8 alternating process pairs, one revision per process, next to an identical-code control measured the same way.",
+    environment: "Runtime version, machine",
+    footer: "Link to the harness, the plan and the experiment log at a pinned commit.",
+    prs: {
+      1234: { title: "Short title of the PR", status: "open" },
+    },
+  };
+
+  /**
+   * One row per workload, from the standalone runs that the PR bodies use. Keep the numbers
+   * unrounded: rounding happens only when printing.
+   *
+   *   delta     median change in time in percent (negative = less time), unrounded
+   *   lo, hi    range of the process pairs, same unit
+   *   cMed, cLo, cHi   identical-code control: median and range of its pairs
+   *   pr        PR number, or null for a row that covers all PRs
+   *   whole     true for the whole user-facing operation (required: exactly one such row)
+   */
+  const ROWS = [
+    { label: "Workload A", sub: "what it runs", delta: -32.24, lo: -32.7, hi: -25.4, cMed: 0.1, cLo: -1.3, cHi: 1.5, pr: 1234 },
+    { label: "Whole operation", sub: "all PRs, the call a user makes", delta: -1.47, lo: -4.1, hi: 5.6, cMed: 0.4, cLo: -8.1, cHi: 5.0, pr: null, whole: true },
+  ];
+
+  const MINUS = "−";
+  const TIMES = "×";
+  const DOT = " · ";
+  const pct = (v) => `${v > 0 ? "+" : v < 0 ? MINUS : ""}${Math.abs(v).toFixed(1)}%`;
+  const factor = (d) => 1 / (1 + d / 100);
+  const mult = (d) => `${factor(d).toFixed(2)}${TIMES}`;
+  /** Inside its own control's range: the instrument cannot separate it from noise. */
+  const unresolved = (r) => r.delta >= r.cLo && r.delta <= r.cHi;
+  const kind = (r) => (unresolved(r) ? "flat" : r.delta < 0 ? "better" : "worse");
+  const colour = { better: "var(--accent)", worse: "var(--worse)", flat: "var(--base)" };
+
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /** Refuse to present what the method would not report. */
+  const problems = [];
+  if (ROWS.filter((r) => r.whole).length !== 1) problems.push("There must be exactly one row with whole: true, for the operation a user calls.");
+  for (const r of ROWS) {
+    if (!r.whole && unresolved(r)) problems.push(`"${r.label}": the median (${pct(r.delta)}) lies inside its control's range (${pct(r.cLo)} to ${pct(r.cHi)}). Report the focused number in the PR instead, and leave the row out.`);
+    if (r.pr && !CONFIG.prs[r.pr]) problems.push(`"${r.label}": PR #${r.pr} has no entry in CONFIG.prs.`);
+  }
+  if (problems.length) {
+    document.getElementById("check").hidden = false;
+    for (const p of problems) document.getElementById("check-list").append(el("li", "", p));
+  }
+
+  const throughput = CONFIG.framing === "throughput";
+  const after = (r) => (throughput ? 100 * factor(r.delta) : 100 + r.delta);
+  const scaleMax = throughput
+    ? Math.max(150, Math.ceil(Math.max(...ROWS.map(after)) / 50) * 50)
+    : Math.max(100, Math.ceil(Math.max(...ROWS.map(after)) / 25) * 25);
+
+  document.getElementById("eyebrow").textContent = `${CONFIG.project}${DOT}measured against ${CONFIG.base} (${CONFIG.baseCommit})`;
+  document.getElementById("title").textContent = CONFIG.title;
+  document.getElementById("lede").textContent = CONFIG.lede;
+  document.getElementById("footer").textContent = CONFIG.footer;
+  document.getElementById("caption").textContent = `${throughput ? "Work done in the same time (throughput)" : "Time for the same work"}, ${CONFIG.base} = 100. ${CONFIG.method} ${CONFIG.environment}.`;
+
+  const legend = document.getElementById("legend");
+  for (const [text, c] of [[`${CONFIG.base} (before)`, colour.flat], ["with the change (after)", colour.better]]) {
+    const k = el("span", "key");
+    const s = el("span", "swatch");
+    s.style.background = c;
+    k.append(s, document.createTextNode(text));
+    legend.append(k);
+  }
+
+  const ticks = document.getElementById("ticks");
+  const step = throughput ? 50 : 25;
+  for (let t = 0; t <= scaleMax; t += step) ticks.append(el("span", "", String(t)));
+
+  /** In the chart's own framing only: one chart never mixes time and throughput. */
+  function resultText(r) {
+    const main = throughput ? `${pct((factor(r.delta) - 1) * 100)} throughput` : `${pct(r.delta)} time`;
+    if (kind(r) === "flat") return `${main}${DOT}no measurable change`;
+    return kind(r) === "better" ? `${main}${DOT}${mult(r.delta)} faster` : `${main}${DOT}${mult(r.delta)} (slower)`;
+  }
+
+  const rows = document.getElementById("rows");
+  for (const r of ROWS) {
+    const li = el("li", "row");
+    li.tabIndex = 0;
+    li.setAttribute("aria-label", `${r.label}: ${resultText(r)}`);
+    const name = el("div", "name");
+    name.append(el("b", "", r.label), el("span", "", r.sub));
+    const bars = el("div", "bars");
+    for (const [value, c, withRef] of [[100, colour.flat, false], [after(r), colour[kind(r)], true]]) {
+      const line = el("div", "bar-line");
+      const track = el("div", "track");
+      const bar = el("div", "bar");
+      bar.style.width = `${(value / scaleMax) * 100}%`;
+      bar.style.background = c;
+      if (kind(r) === "flat" && withRef) bar.style.opacity = "0.55";
+      track.append(bar);
+      if (withRef) {
+        const ref = el("div", "ref");
+        ref.style.left = `${(100 / scaleMax) * 100}%`;
+        track.append(ref);
+      }
+      line.append(track, el("span", "val", value.toFixed(0)));
+      bars.append(line);
+    }
+    const result = el("div", "result");
+    result.append(el("span", kind(r) === "flat" ? "quiet" : "", resultText(r)));
+    const tip = el("div", "tip");
+    tip.append(
+      el("strong", "", r.label),
+      el("span", "mono", `pairs: ${pct(r.lo)} to ${pct(r.hi)}`),
+      el("span", "mono", `identical code: median ${pct(r.cMed)} (${pct(r.cLo)} to ${pct(r.cHi)})`),
+      el("span", "mono", r.pr ? `PR #${r.pr} (${CONFIG.prs[r.pr]?.status ?? "unknown"})` : "all PRs combined"),
+    );
+    li.append(name, bars, result, tip);
+    rows.append(li);
+  }
+
+  /** A column count the tiles fill, so the last one is never alone on a row. */
+  const tiles = document.getElementById("tiles");
+  const n = ROWS.length;
+  const cols = n <= 4 ? n : n % 3 === 0 ? 3 : n % 4 === 0 ? 4 : n % 2 === 0 ? 2 : 3;
+  tiles.style.setProperty("--cols", String(cols));
+  for (const r of ROWS) {
+    const t = el("div", `tile${kind(r) === "flat" ? " flat" : ""}`);
+    const big = el("span", "big", kind(r) === "flat" ? "no change" : mult(r.delta));
+    big.style.color = kind(r) === "flat" ? "var(--ink-3)" : colour[kind(r)];
+    t.append(big, el("span", "what", r.label), el("span", "how", kind(r) === "flat" ? `${pct(r.delta)}, inside noise` : `${pct(r.delta)} time${r.pr ? `${DOT}PR #${r.pr}` : ""}`));
+    tiles.append(t);
+  }
+
+  const table = document.getElementById("table");
+  for (const r of ROWS) {
+    const tr = document.createElement("tr");
+    const cells = [
+      [r.label, ""],
+      [`${pct(r.delta)}${kind(r) === "flat" ? " (inside noise)" : ""}`, "n"],
+      [kind(r) === "flat" ? "–" : mult(r.delta), "n"],
+      [`${pct(r.lo)} to ${pct(r.hi)}`, "n"],
+      [`${pct(r.cMed)} (${pct(r.cLo)} to ${pct(r.cHi)})`, "n"],
+      [r.pr ? `#${r.pr}` : "all", "n"],
+    ];
+    for (const [text, cls] of cells) tr.append(el("td", cls, text));
+    table.append(tr);
+  }
+
+  const prs = document.getElementById("prs");
+  for (const [num, p] of Object.entries(CONFIG.prs)) {
+    const li = el("li");
+    const a = el("a", "", `#${num} ${p.title}`);
+    a.href = `https://github.com/${CONFIG.project}/pull/${num}`;
+    li.append(a, el("span", "status", p.status));
+    prs.append(li);
+  }
+</script>
+</body>
+</html>

@@ -28,7 +28,7 @@ The different task requires parts that the original does not need:
 
 ## How it works
 
-`SKILL.md` has ten steps:
+`SKILL.md` has eleven steps:
 
 0. **Scope.** Agree on the branch, the focus and the number of experiments.
 1. **Explore.** Find how the repository builds, tests and benchmarks, which metric the maintainers accept, and which checks can run on this machine.
@@ -40,6 +40,7 @@ The different task requires parts that the original does not need:
 7. **Loop.** Change, check, commit, measure. Measure again if the change clears the threshold. Keep the commit or reset it. Log the result.
 8. **Stop.** After three experiments in a row that are not kept, try other parts of the code. Stop at the experiment budget.
 9. **Package.** Group the kept commits into pull requests, verify each one on its own, and confirm each with the user before it is created.
+10. **Visualize.** Make one self-contained HTML page with the results, from the same numbers as the pull requests, including the whole user-facing operation.
 
 ### Three measurements
 
@@ -60,11 +61,13 @@ autoresearch-skill/
 ├── SKILL.md                      the method, independent of the language
 ├── references/
 │   ├── methodology.md            how the measurements work and how to report them
-│   └── pr-packaging.md           how to turn the kept commits into pull requests
+│   ├── pr-packaging.md           how to turn the kept commits into pull requests
+│   └── visualization.md          how to show the results, and which chart fits which result
 ├── templates/
 │   ├── plan.md                   campaign plan with calibration and experiment notes
 │   ├── experiments.tsv           experiment log
 │   ├── pr-body.md                pull request body
+│   ├── results.html              self-contained results page, driven by one data array
 │   ├── gates.example.sh          runs the repository's checks in the right order
 │   └── fetch-fixtures.sh         downloads external test inputs with checksums
 └── runtimes/

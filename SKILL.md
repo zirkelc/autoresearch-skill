@@ -14,7 +14,8 @@ Supporting material, read when the step says so:
 
 - `references/methodology.md`: why pairing, minima, load orders and noise bars matter, and how to read and report the numbers.
 - `references/pr-packaging.md`: how to turn kept commits into PRs (step 9).
-- `templates/`: plan, experiment log and PR body skeletons.
+- `references/visualization.md`: how to show the results in one page (step 10).
+- `templates/`: plan, experiment log, PR body and results page skeletons.
 
 ## Step 0: Agree on scope before touching anything
 
@@ -202,3 +203,17 @@ Two rules travel with that step.
 **Search for earlier attempts before you package.** For each kept change, search open **and** closed PRs by function name, file name and area, and read why the closed ones were closed. One campaign opened a PR that repeated a PR closed 13 days earlier, almost line by line; a search of open PRs only did not find it, and the maintainer closed the new one as a duplicate. `references/pr-packaging.md` has the commands.
 
 Show the user each PR (title, branch, commits, verification table, body) and wait for confirmation before you push or create it. Create each PR only after its confirmation. Follow the target repo's own PR conventions where they exist.
+
+## Step 10: Visualize the results
+
+Make one self-contained HTML file that shows what the campaign achieved: no build step, no external scripts or fonts, the data inline. Start from `templates/results.html` and follow `references/visualization.md`. How the file is published or shared is up to the user.
+
+Do this after the PRs exist, because the page uses the same numbers as the PR bodies and shows the status of each PR. The rules that matter most:
+
+- **Show the whole user-facing operation next to the parts.** Measure it standalone with its control and draw it as its own grey row. In one campaign, four changes of 1.12x to 1.48x moved a whole `fetch()` call by -1.5%, inside the noise; without that row, the chart implies the opposite.
+- **Draw only standalone numbers that passed the resolvability test in step 9**, unrounded, from the same data as the PR bodies. Put pair ranges and controls in a table and in tooltips, not in the main marks: a chart that needs whiskers and control bands to be read was too hard to read in the campaign that tried it.
+- **Label workloads, not functions,** and use one framing per chart (time or throughput), the one the project's ecosystem reads.
+- **Look at the rendered page once as a first-time reader** before you show it.
+
+The template checks its own data and shows a warning instead of a clean page when a row's median lies inside its control's range, when the whole operation is missing, or when a row points at a PR without a status.
+
