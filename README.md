@@ -82,14 +82,9 @@ Other languages need a new runtime folder. `runtimes/README.md` lists what a run
 
 ## Install
 
-Clone the repository and link it into the skills directory of your agent:
-
 ```bash
-git clone https://github.com/zirkelc/autoresearch-skill.git
-ln -s "$PWD/autoresearch-skill" <skills-directory>/autoresearch
+npx skills add zirkelc/autoresearch-skill
 ```
-
-The linked directory must be named `autoresearch`, which is the name in `SKILL.md`.
 
 ## Use
 
@@ -106,12 +101,12 @@ A campaign takes several hours. Most of the time is measurement and, on a shared
 
 The skill has run on four repositories:
 
-| Project | Experiments | Kept | Result |
-|---|---|---|---|
-| [zod](https://github.com/colinhacks/zod) | 18 | 11 | 40% less time on the benchmark suite. 4 PRs, 2 merged |
-| [linkedom](https://github.com/WebReflection/linkedom) | 18 | 8 | 2.02x faster on the benchmark suite. 4 PRs open |
-| [micromark](https://github.com/micromark/micromark) | 16 | 7 | 6 PRs open |
-| [undici](https://github.com/nodejs/undici) | 12 | 6 | 4 PRs open |
+| Project | Experiments | Kept | Result | Pull requests |
+|---|---|---|---|---|
+| [zod](https://github.com/colinhacks/zod) | 18 | 11 | 40% less time on the benchmark suite | [#6316](https://github.com/colinhacks/zod/pull/6316), [#6317](https://github.com/colinhacks/zod/pull/6317), [#6318](https://github.com/colinhacks/zod/pull/6318), [#6319](https://github.com/colinhacks/zod/pull/6319) (2 merged, 2 closed) |
+| [linkedom](https://github.com/WebReflection/linkedom) | 18 | 8 | 2.02x faster on the benchmark suite | [#335](https://github.com/WebReflection/linkedom/pull/335), [#336](https://github.com/WebReflection/linkedom/pull/336), [#337](https://github.com/WebReflection/linkedom/pull/337), [#338](https://github.com/WebReflection/linkedom/pull/338) (open) |
+| [micromark](https://github.com/micromark/micromark) | 16 | 7 | | [#234](https://github.com/micromark/micromark/pull/234), [#235](https://github.com/micromark/micromark/pull/235), [#236](https://github.com/micromark/micromark/pull/236), [#237](https://github.com/micromark/micromark/pull/237), [#238](https://github.com/micromark/micromark/pull/238), [#239](https://github.com/micromark/micromark/pull/239) (open) |
+| [undici](https://github.com/nodejs/undici) | 12 | 6 | | [#5901](https://github.com/nodejs/undici/pull/5901), [#5902](https://github.com/nodejs/undici/pull/5902), [#5903](https://github.com/nodejs/undici/pull/5903), [#5904](https://github.com/nodejs/undici/pull/5904) (open) |
 
 After each campaign, the skill was updated with the problems found during that campaign.
 
