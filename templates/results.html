@@ -62,6 +62,7 @@
   .name { display: grid; gap: 1px; }
   .name b { font-weight: 600; }
   .name span { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  .name .pr { color: var(--ink-2); }
   .bars { display: grid; gap: 2px; }
   .bar-line { display: grid; grid-template-columns: 1fr 4ch; align-items: center; gap: 10px; }
   .track { position: relative; height: 14px; }
@@ -71,7 +72,9 @@
   .result { grid-column: 2; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; }
   .result .quiet { color: var(--ink-3); }
   .scale { display: grid; grid-template-columns: minmax(160px, 250px) 1fr; gap: 18px; font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
-  .ticks { display: flex; justify-content: space-between; padding-right: calc(4ch + 10px); border-top: 1px solid var(--rule); padding-top: 6px; }
+  .ticks { position: relative; height: 18px; margin-right: calc(4ch + 10px); border-top: 1px solid var(--rule); }
+  .ticks span { position: absolute; top: 6px; transform: translateX(-50%); }
+  .ticks span:first-child { transform: none; }
   figcaption { font-size: 12.5px; color: var(--ink-3); max-width: 80ch; }
   .tip { position: absolute; z-index: 2; left: 0; top: 100%; margin-top: 6px; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); padding: 10px 12px; font-size: 13px; width: min(320px, 100%); display: none; }
   .row:hover .tip, .row:focus-visible .tip { display: grid; gap: 2px; }
@@ -135,7 +138,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th scope="col">Workload</th><th scope="col">Change in time (median)</th><th scope="col">Speed-up</th><th scope="col">Range of the pairs</th><th scope="col">Identical-code control: median (range)</th><th scope="col">Pull request</th></tr>
+          <tr><th scope="col">Workload</th><th scope="col">Change in time (median)</th><th scope="col">Speed-up</th><th scope="col">Range of the pairs</th><th scope="col">Identical-code control: median (range)</th><th scope="col">Pull request</th><th scope="col">Measured against</th></tr>
         </thead>
         <tbody id="table"></tbody>
       </table>
@@ -180,6 +183,7 @@
    *   lo, hi    range of the process pairs, same unit
    *   cMed, cLo, cHi   identical-code control: median and range of its pairs
    *   pr        PR number, or null for a row that covers all PRs
+   *   base      optional: the commit this row was measured against, when PRs have different bases
    *   whole     true for the whole user-facing operation (required: exactly one such row)
    */
   const ROWS = [
@@ -240,7 +244,12 @@
 
   const ticks = document.getElementById("ticks");
   const step = throughput ? 50 : 25;
-  for (let t = 0; t <= scaleMax; t += step) ticks.append(el("span", "", String(t)));
+  /** Placed at their values, like the bars; spreading labels evenly puts them next to the wrong value. */
+  for (let t = 0; t <= scaleMax; t += step) {
+    const tick = el("span", "", String(t));
+    tick.style.left = `${(t / scaleMax) * 100}%`;
+    ticks.append(tick);
+  }
 
   /** In the chart's own framing only: one chart never mixes time and throughput. */
   function resultText(r) {
@@ -255,7 +264,10 @@
     li.tabIndex = 0;
     li.setAttribute("aria-label", `${r.label}: ${resultText(r)}`);
     const name = el("div", "name");
-    name.append(el("b", "", r.label), el("span", "", r.sub));
+    /** Which PR, and whether it shipped, belongs where the reader looks, not only in a tooltip. */
+    const status = r.pr ? CONFIG.prs[r.pr]?.status ?? "unknown" : null;
+    const prLine = el("span", "pr", r.pr ? `PR #${r.pr}${DOT}${status}` : "all changes combined");
+    name.append(el("b", "", r.label), el("span", "", r.sub), prLine);
     const bars = el("div", "bars");
     for (const [value, c, withRef] of [[100, colour.flat, false], [after(r), colour[kind(r)], true]]) {
       const line = el("div", "bar-line");
@@ -281,6 +293,7 @@
       el("span", "mono", `pairs: ${pct(r.lo)} to ${pct(r.hi)}`),
       el("span", "mono", `identical code: median ${pct(r.cMed)} (${pct(r.cLo)} to ${pct(r.cHi)})`),
       el("span", "mono", r.pr ? `PR #${r.pr} (${CONFIG.prs[r.pr]?.status ?? "unknown"})` : "all PRs combined"),
+      el("span", "mono", `measured against ${r.base ?? CONFIG.baseCommit}`),
     );
     li.append(name, bars, result, tip);
     rows.append(li);
@@ -295,7 +308,7 @@
     const t = el("div", `tile${kind(r) === "flat" ? " flat" : ""}`);
     const big = el("span", "big", kind(r) === "flat" ? "no change" : mult(r.delta));
     big.style.color = kind(r) === "flat" ? "var(--ink-3)" : colour[kind(r)];
-    t.append(big, el("span", "what", r.label), el("span", "how", kind(r) === "flat" ? `${pct(r.delta)}, inside noise` : `${pct(r.delta)} time${r.pr ? `${DOT}PR #${r.pr}` : ""}`));
+    t.append(big, el("span", "what", r.label), el("span", "how", kind(r) === "flat" ? `${pct(r.delta)}, inside noise` : `${pct(r.delta)} time${r.pr ? `${DOT}PR #${r.pr} ${CONFIG.prs[r.pr]?.status ?? ""}` : `${DOT}all changes`}`));
     tiles.append(t);
   }
 
@@ -309,6 +322,7 @@
       [`${pct(r.lo)} to ${pct(r.hi)}`, "n"],
       [`${pct(r.cMed)} (${pct(r.cLo)} to ${pct(r.cHi)})`, "n"],
       [r.pr ? `#${r.pr}` : "all", "n"],
+      [r.base ?? CONFIG.baseCommit, "n"],
     ];
     for (const [text, cls] of cells) tr.append(el("td", cls, text));
     table.append(tr);

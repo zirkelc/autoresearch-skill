@@ -29,6 +29,7 @@ const HARNESS_DIR = import.meta.dirname;
 const { config, positionals, values } = loadConfig(HARNESS_DIR, process.argv.slice(2), {
   iters: { type: "string" },
   pairs: { type: "string" },
+  "target-ms": { type: "string" },
   child: { type: "boolean" },
 });
 /**
@@ -42,6 +43,13 @@ const ITERS = Number(values.iters ?? (positionals.length >= 3 ? 100 : 25));
 
 const gc: () => void = (globalThis as { gc?: () => void }).gc ?? (() => {});
 
+/**
+ * Each timed iteration repeats the body until it takes about this long, as `ab.mts` does. Timing a
+ * single short body measures the timer and the scheduler: in one repository, 10 of 12 case bodies
+ * took 0.04 to 0.98 ms, and the minimum of such timings is not a number to put in a PR.
+ */
+const TARGET_NS = Number(values["target-ms"] ?? 2) * 1_000_000;
+
 /** Minimum ms of one body, for one revision, in this process. */
 async function measure(rev: string, name: string): Promise<number> {
   const cases = await loadCases(config, materialise(config, rev, "solo"), "solo");
@@ -49,15 +57,21 @@ async function measure(rev: string, name: string): Promise<number> {
   if (!perfCase) throw new Error(`No case ${name}. Known: ${cases.map((c) => c.name).join(", ")}`);
 
   perfCase.setup?.();
-  for (let w = 0; w < 5; w++) await perfCase.run();
+  let probe = Number.POSITIVE_INFINITY;
+  for (let w = 0; w < 10; w++) probe = Math.min(probe, await timeNs(perfCase.run));
+  const reps = Math.max(1, Math.round(TARGET_NS / probe));
+  const runBatch = async () => {
+    for (let r = 0; r < reps; r++) await perfCase.run();
+  };
+  for (let w = 0; w < 3; w++) await runBatch();
 
   let min = Number.POSITIVE_INFINITY;
   for (let i = 0; i < ITERS; i++) {
     gc();
-    min = Math.min(min, await timeNs(perfCase.run));
+    min = Math.min(min, await timeNs(runBatch));
   }
   perfCase.teardown?.();
-  return min / 1_000_000;
+  return min / reps / 1_000_000;
 }
 
 function childMeasure(rev: string, name: string): number {
@@ -71,6 +85,8 @@ function childMeasure(rev: string, name: string): number {
       "--child",
       "--iters",
       String(ITERS),
+      "--target-ms",
+      String(TARGET_NS / 1_000_000),
       "--entry",
       config.entry,
       "--cases",
@@ -118,7 +134,7 @@ if (values.child) {
     deltas.push(delta);
     timesA.push(a);
     timesB.push(b);
-    console.log(`${String(p + 1).padEnd(6)}${a.toFixed(3).padStart(10)}${b.toFixed(3).padStart(10)}${`${delta.toFixed(2)}%`.padStart(9)}`);
+    console.log(`${String(p + 1).padEnd(6)}${a.toFixed(4).padStart(10)}${b.toFixed(4).padStart(10)}${`${delta.toFixed(2)}%`.padStart(9)}`);
   }
   deltas.sort((x, y) => x - y);
   const mid = deltas.length % 2 ? deltas[deltas.length >> 1] : (deltas[deltas.length / 2 - 1] + deltas[deltas.length / 2]) / 2;
@@ -126,7 +142,7 @@ if (values.child) {
   /** Each revision's own spread across processes says whether this case can be measured this way at
    * all: the same revision measuring 2.6 to 3.4 ms from process to process is the answer to any
    * median computed from it. */
-  const spread = (xs: Array<number>) => `${Math.min(...xs).toFixed(3)}..${Math.max(...xs).toFixed(3)} ms`;
+  const spread = (xs: Array<number>) => `${Math.min(...xs).toFixed(4)}..${Math.max(...xs).toFixed(4)} ms`;
   console.log(`${revA} across processes: ${spread(timesA)}`);
   console.log(`${revB} across processes: ${spread(timesB)}`);
   if (revA !== revB) {
@@ -138,5 +154,5 @@ if (values.child) {
   const name = positionals[1];
   if (!name) throw new Error("Usage: solo.mts <rev|WORKTREE> <case>   or   solo.mts <revA> <revB> <case>");
   const min = await measure(rev, name);
-  console.log(`${name} @ ${rev}: min ${min.toFixed(2)} ms of ${ITERS} iterations`);
+  console.log(`${name} @ ${rev}: min ${min.toFixed(4)} ms per body, ${ITERS} iterations`);
 }
