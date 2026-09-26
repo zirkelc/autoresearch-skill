@@ -59,7 +59,7 @@ Shared code is one of two mechanisms. The other is shared **process state**: lib
 
 Do not expect to engineer this away. The harness gives each side its own instance of the cases module, which removes one source (the case bodies stay monomorphic per side), and that is worth having. It is not sufficient: the same campaign re-measured the same case with the per-slot import active and still saw +21.1% paired against -3.0% standalone. The remaining mechanism is the shared heap, not shared code, and no module identity can separate that.
 
-So the rule is not "confirm if you are unsure", it is: **a per-case delta on code the change did not touch is not a result until a standalone run agrees with it.** Run one revision per process (`solo.mts` in the node-ts runtime) before you report it, act on it, or discard a change because of it. When the standalone numbers disagree with the paired ones, the row is an artefact of the instrument and belongs in the PR body as such, because a reviewer who runs the harness will see the same line.
+So the rule is not "confirm if you are unsure", it is: **a per-case delta on code the change did not touch is not a result until a standalone run agrees with it.** Run one revision per process (`solo.mts` in the node-ts runtime) before you report it, act on it, or discard a change because of it. When the standalone numbers disagree with the paired ones, the row is an artefact of the instrument. Report the standalone number. If the user asks for the paired numbers in the PR body, mark that row as an artefact, because a reviewer who runs the harness will see the same line.
 
 Untouched code is where the artefact is easiest to recognise, not where it stops. The same polymorphism inflates the numbers of code the change did touch, on both sides at once, and a maintainer who reproduces a headline figure one build per process will then get a different number than the PR claims.
 
@@ -102,7 +102,7 @@ Two shapes in the output point at such a row, and both are hints, not verdicts:
 
 Existing benchmark suites usually answer a different question: "is this library faster than library X?" They import one version of the code per process, so they cannot compare two revisions of it in one execution. Using them for A/B would mean comparing two standalone runs, which is the failure mode above. They also often use unseeded random data, so the two sides would not see the same inputs, and the outputs cannot be hashed for a guard.
 
-So: mirror their workloads (the maintainers' own idea of what is representative) into deterministic cases, use those for decisions, and keep the original suite as an external cross-check. Say this explicitly in PR bodies, because reviewers will ask.
+So: mirror their workloads (the maintainers' own idea of what is representative) into deterministic cases, use those for decisions, and keep the original suite as an external cross-check. If a reviewer asks how a number was measured, say this in a comment.
 
 ## Noise floor and keep bar
 

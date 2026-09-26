@@ -83,7 +83,7 @@ Run from the harness location (the campaign branch):
 2. Two A/B runs of the base against the branch, focused on the cases the PR targets where the full suite cannot resolve them.
 3. A standalone run per headline case, alternating whole processes (`solo.mts A B <case>` in node-ts), **twice, on different occasions, each next to an identical-code control** (`solo.mts A A <case>`, same settings). An effect is resolvable standalone when its median lies outside the control's pair range in both runs. One case moved from -12.6% to -17.7% between days with tight controls both times, so one run is one sample of the day.
 
-**Every headline number in the body comes from step 3, with its control beside it.** The reason is not that paired numbers are inflated: across five changes in one campaign the standalone number came out lower twice and higher twice. It is that a maintainer builds one revision per process, so that is the number they will measure, and a reviewer who reproduces something else stops believing the rest of the PR. Two PRs of an earlier campaign were closed over that kind of credibility.
+**Every number in the body comes from step 3, measured next to its control.** The reason is not that paired numbers are inflated: across five changes in one campaign the standalone number came out lower twice and higher twice. It is that a maintainer builds one revision per process, so that is the number they will measure, and a reviewer who reproduces something else stops believing the rest of the PR. Two PRs of an earlier campaign were closed over that kind of credibility.
 
 The control is what turns the number into evidence. Process-to-process spread differed by a factor of twenty between cases of the same campaign, from +-1.5% to +-33%, so the same command resolves a 32% effect in one case and cannot resolve 9% in another. Where the control's spread covers the effect, say so in the body, give the focused number and name the instrument: one real change measured -8.5% and -9.8% focused against controls of +0.2% and +0.8%, and no standalone run could separate it from its own control.
 
@@ -97,23 +97,26 @@ Optionally, run the repo's own benchmark on the base and on each branch as an ex
 
 ## 5. Write the PR bodies
 
-Use `templates/pr-body.md`. Every PR gets the same preamble (the campaign and its method), then its own content:
+A maintainer reads the body to decide one thing: whether to review the change. Keep it short and factual.
 
-- **What this PR does**: one paragraph per commit. What was slow, why, and what changed. Point to existing patterns in the codebase that the change follows, and to prior art by the maintainers (unmerged branches, earlier PRs).
-- **Verification**: a table with run 1, run 2 and the speed-up versus base for the cases the PR targets, plus the suite total. Mark noisy cases as noise instead of claiming them.
-- **Observable surface**: everything a careful reviewer could notice: property descriptors, enumerability, own vs inherited properties, mutation semantics, new internal fields, error message timing. Name each one. A reviewer who finds an unlisted difference stops trusting the rest.
-- **Invariants the change introduces**: anything the rest of the codebase must keep true for the change to stay correct, for example "nothing writes to this shared object" or "this structure is never aliased". A maintainer is accepting a constraint on future work, not only a diff, and that is a cost they are entitled to weigh.
-- **Reproducing the numbers**: run instructions against the base, plus the harness itself. Two ways, in order of preference. Push the campaign branch to a fork and link it at a **named commit** (a branch can be force-pushed or deleted, and the reviewer's reproduction then silently differs); that also exposes the plan and the log, so a reviewer can see the experiments that failed, which is the more convincing artifact. Inline the sources in `<details>` blocks only when no fork exists or the repo is private. Either way, keep the cases module inline: it defines what was measured, and that is the file a reviewer reads to judge whether the benchmark is honest. For upstream PRs, use the PR head ref: `git fetch origin pull/<N>/head:pr-<N>`.
-- **Instrument artefacts**: if a case shows a delta that standalone timing does not reproduce (see `methodology.md`), say so in the body. A reviewer who runs the harness will see the same line.
-- **Companion PRs**: links to the other PRs of the campaign. Add these only after all PRs exist, with their real numbers. Placeholder numbers such as `#1 #2` link to, and notify, the old issues 1 and 2 of the target repo.
+1. **The repository's PR template comes first.** Use the current template of the repository, or of its organisation (`.github/pull_request_template.md`, or the organisation's `.github` repository), with all its sections in their order. Take it from the repository, not from a merged PR, which can show an old revision. Fill in the template, keep machine markers such as `<!--do not edit: pr-->`, and tick only what is true. Do not put a structure of your own above or around it. Some repositories check the template with a bot and flag every PR that removes it. If the repository has no template, use `templates/pr-body.md`.
+2. **Write in ASD-STE100 Simplified Technical English.** Short sentences with one statement each. Active voice. Common words with one meaning. No rhetorical phrases, no emphasis for effect, no sentences that only introduce the next sentence. This applies to the body and to every comment on the PR.
+3. **Default content**, placed in the template's sections:
+   - What changed: one or two sentences.
+   - Why it is faster: one or two sentences.
+   - One number: the standalone result for the targeted workload, with the runtime version. Name the workload, not the whole library.
+   - Which tests ran, and that the behaviour is unchanged.
+   - Only if there is one: an observable difference a reviewer could notice, or an invariant the change introduces. One sentence each.
+4. **Everything else only if the user asks for it**: the campaign and methodology preamble, the verification table with pair ranges and controls, the paired numbers, reproduction commands, a link to the harness, links to companion PRs. These stay in the plan. If a maintainer asks how a number was measured, answer in a comment.
+5. **Never put harness sources in a body.**
 
-Also follow the repo's own PR conventions (templates, agent instruction files such as AGENTS.md, tone). Where the repo has a template, the campaign preamble goes first and the repo's own sections follow it, so a maintainer finds the structure they expect. **Never tick a DCO or CLA checkbox.** It is a declaration by a person about their own work, and an agent cannot make it; leave it unticked and say so when you present the PR.
+**Never tick a DCO or CLA checkbox.** It is a declaration by a person about their own work, and an agent cannot make it. Leave it unticked and say so when you present the PR.
 
-Write bodies to files and pass them with `--body-file`. Inline heredocs break backticks and template literals. When several PRs cross-reference each other, generate all the bodies from one script with placeholders (PR numbers, companion links, the harness link at a full hash), create the PRs, then fill the placeholders with `gh pr edit`. Four bodies written by hand drift apart; four generated from one script do not.
+Write bodies to files and pass them with `--body-file`. Inline heredocs break backticks and template literals. Placeholder PR numbers such as `#1 #2` link to, and notify, the old issues 1 and 2 of the target repository, so add cross-references only after the PRs exist.
 
 ## 6. Confirm and create, one PR at a time
 
-Before any of this touches a remote, grep the plan, the log and the cases for private names, paths and hosts. PR bodies link the campaign branch publicly, and a plan written during the campaign names the downstream repo that motivated the work. One campaign published a private repository's name eight times that way. This is a blocking check, not a tidy-up.
+Before any of this touches a remote, grep the plan, the log and the cases for private names, paths and hosts. A link to the campaign branch in a PR body or comment makes it public, and a plan written during the campaign names the downstream repo that motivated the work. One campaign published a private repository's name eight times that way. This is a blocking check, not a tidy-up.
 
 Check the base's own CI before you open anything. When a PR shows failing jobs, compare the failing set with the base's last run: a failure that also fails on the base is not yours, and saying so in the body saves the maintainer the same investigation. Occasionally the comparison finds a real bug in their CI, which is worth its own issue.
 
@@ -129,8 +132,6 @@ git merge-tree --write-tree origin/main <branch>     # does it still merge clean
 No overlap means the branch can stay on the base it was measured against, and the body can say which commit that was. An overlap in the touched files, or in the files an invariant depends on, means re-verify on the new base rather than rebase and hope.
 
 `gh repo fork <owner>/<repo> --clone=false` is the form that works when you only need the fork; adding `--remote=false` to it failed.
-
-Use the current PR template from the organisation (`.github/pull-request-template.md` in its `.github` repo), not the one copied from a merged PR, which may be an old revision. Keep machine markers such as `<!--do not edit: pr-->`, and tick only what is true.
 
 Put decision items (the ideas that would change behaviour, from the plan) into the body of the PR they relate to, as an open question for the maintainers, with the behaviour risk named.
 
