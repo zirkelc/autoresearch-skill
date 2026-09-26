@@ -110,56 +110,6 @@ You can also ask for it in plain words, for example "run a performance campaign 
 
 A campaign takes several hours. Most of the time is measurement and, on a shared machine, waiting until the machine is quiet.
 
-## Results
-
-The skill has run on four repositories. After each campaign, the skill was updated with the problems found during that campaign.
-
-### zod
-
-18 experiments, 11 kept. 40% less time on the benchmark suite.
-
-| Pull request | Description | Status |
-|---|---|---|
-| [#6316](https://github.com/colinhacks/zod/pull/6316) | Lazy `ZodError` construction, about 40% faster failing `safeParse` | Merged |
-| [#6317](https://github.com/colinhacks/zod/pull/6317) | Reuse frozen default parse contexts, about 15% faster leaf parses | Closed |
-| [#6318](https://github.com/colinhacks/zod/pull/6318) | Halve schema construction cost and keep instances in fast-properties mode | Merged |
-| [#6319](https://github.com/colinhacks/zod/pull/6319) | Single-check fast path and in-place issue prefixing in the object JIT | Closed |
-
-### linkedom
-
-18 experiments, 8 kept. 2.02x faster on the benchmark suite.
-
-| Pull request | Description | Status |
-|---|---|---|
-| [#335](https://github.com/WebReflection/linkedom/pull/335) | Create the event listeners map on first use | Open |
-| [#336](https://github.com/WebReflection/linkedom/pull/336) | Cache the class token value and skip the token list while parsing | Open |
-| [#337](https://github.com/WebReflection/linkedom/pull/337) | Walk and serialize the tree without intermediate arrays | Open |
-| [#338](https://github.com/WebReflection/linkedom/pull/338) | Allocate the node end marker without symbol keys in the literal | Open |
-
-### micromark
-
-16 experiments, 7 kept.
-
-| Pull request | Description | Status |
-|---|---|---|
-| [#234](https://github.com/micromark/micromark/pull/234) | Improve `subtokenize` performance | Open |
-| [#235](https://github.com/micromark/micromark/pull/235) | Improve `splice` performance | Open |
-| [#236](https://github.com/micromark/micromark/pull/236) | Improve HTML compile performance | Open |
-| [#237](https://github.com/micromark/micromark/pull/237) | Improve performance of parsing without extensions | Open |
-| [#238](https://github.com/micromark/micromark/pull/238) | Improve performance of the text and code text resolvers | Open |
-| [#239](https://github.com/micromark/micromark/pull/239) | Improve attention resolver performance | Open |
-
-### undici
-
-12 experiments, 6 kept.
-
-| Pull request | Description | Status |
-|---|---|---|
-| [#5901](https://github.com/nodejs/undici/pull/5901) | Avoid redundant request state in the `Request` constructor | Closed |
-| [#5902](https://github.com/nodejs/undici/pull/5902) | Mask WebSocket frames without a mask array, four bytes per step | Closed |
-| [#5903](https://github.com/nodejs/undici/pull/5903) | Check `ByteString` code units with a native scan | Open |
-| [#5904](https://github.com/nodejs/undici/pull/5904) | Split each cookie pair once in `getCookies` | Open |
-
 ## License
 
 MIT
